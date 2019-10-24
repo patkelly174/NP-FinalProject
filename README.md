@@ -2,18 +2,17 @@
 
 ## Description
 
-Program that 
+Program that will collect all the apartments availible to rent on apartments.com and compile a list based on price and size.
 
 ## Deliverables
 
-List all the things you want to deliver by the end of the semester.
+A working program that will be able to get a readable list with the most cost effective apartments in the area.
 
 ## Features 
-List all the features of your application in the order of priority.
-1. Feature #1
-2. Feature #2
-3. Feature #3 
-...
+1. Get apartments from the website
+2. Show the cheapest apartments in the area
+3. Show the most cost effective apartments in the area
+4. Use the data to organize the list.
 
 ## Team members
 
