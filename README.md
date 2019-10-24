@@ -2,7 +2,7 @@
 
 ## Description
 
-Program that will collect all the apartments availible to rent on apartments.com and compile a list based on price and size.
+Program that will collect data on the apartments in the area to rent on apartments.com and compile a list based on price and size.
 
 ## Deliverables
 
