@@ -2,11 +2,6 @@
 from socket import * 
 # In order to terminate the program
 import sys
-import pandas
-import lxml.html
-import xlwt
-from xlwt import Workbook
-import pickle
 # Assign the IP address of the web server
 # Use localhost if run the web server locally
 serverName = 'localhost'
@@ -28,12 +23,11 @@ maxPrice = input("Enter max price: ")
 clientSocket.send(maxPrice.encode())
 radius = input("Enter search radius in miles: ")
 clientSocket.send(radius.encode())
+email = input("Enter your email: ")
+clientSocket.send(email.encode())
 
-# Get HTTP response from the web server
-wb = Workbook()
-wb = clientSocket.recv()
-file = 'C:\\Users\\stepkak\\NPClient.xls'
-wb.save(file)
+print(clientSocket.recv(1024).decode())
+print(clientSocket.recv(1024).decode())
 
 clientSocket.close()
 #Terminate the program after getting the corresponding data
