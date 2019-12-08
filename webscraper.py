@@ -7,6 +7,14 @@ from xlwt import Workbook
 import pickle
 import json
 
+#imports for sending email with attachment
+import smtplib,ssl
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email.utils import formatdate
+from email import encoders
+
 # Usage: Open terminal/cmd and run "python WebServer.py"
 
 # Import socket module
@@ -40,16 +48,10 @@ def handle_client(connectionSocket):
         minPrice = connectionSocket.recv(1024).decode()
         maxPrice = connectionSocket.recv(1024).decode()
         radius = connectionSocket.recv(1024).decode()
+        email = connectionSocket.recv(1024).decode()
         url =   "https://www.realtor.com/apartments/"
         url = url + city + "_" + state + "/price-" + minPrice + "-" + maxPrice + "/radius-" + radius
-
-
-        print(url)
-        print(city)
-        print(state)
-        print(minPrice)
-        print(maxPrice)
-        print(radius)
+        connectionSocket.send("Compiling spreadsheet now... (may take up to a minute)".encode())
 
         wb = Workbook()
         sheet1 = wb.add_sheet('Sheet 1')
@@ -99,15 +101,40 @@ def handle_client(connectionSocket):
                 sheet1.write(i + 1 + (44 * counter), 7, pets)
             counter = counter + 1
 
-        file = 'C:\\Users\\stepkak\\NP.xls'
+        file = 'NP.xls'
         wb.save(file)
-        obj = json.loads(wb)
-        connectionSocket.sendall(obj)
 
-
-
+        #sends email to client
+        username = 'witwebscraper'
+        password = 'Password123.'
+        send_from = 'witwebscraper@gmail.com'
+        Cc = ''
+        msg = MIMEMultipart()
+        msg['From'] = send_from
+        msg['To'] = email
+        msg['Cc'] = Cc
+        msg['Date'] = formatdate(localtime=True)
+        msg['Subject'] = 'Your apartment search'
+        server = smtplib.SMTP('smtp.gmail.com')
+        port = '587'
+        fp = open(file, 'rb')
+        part = MIMEBase('application', 'vnd.ms-excel')
+        part.set_payload(fp.read())
+        fp.close()
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', 'attachment', filename='Apartment Search')
+        msg.attach(part)
+        smtp = smtplib.SMTP('smtp.gmail.com')
+        smtp.ehlo()
+        smtp.starttls()
+        smtp.login(username, password)
+        smtp.sendmail(send_from, email.split(',') + msg['Cc'].split(','), msg.as_string())
+        smtp.quit()
 
         # Close the client connection socket
+        emailConfirmation = "Email with spreadsheet has been sent to " + email
+        connectionSocket.send(emailConfirmation.encode())
+        print("Email sent. Closing connection for search of: " + url)
         connectionSocket.close()
 
     except IOError:
