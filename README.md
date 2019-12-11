@@ -18,3 +18,13 @@ A working program that will be able to get a readable list with the most cost ef
 
 Patrick Kelly - Developer 
 Kevin - Developer 
+
+## Getting Started
+
+Install: 
+Download the client file
+Download the server file
+
+Run: 
+Run server file
+Run client file and input all required data
