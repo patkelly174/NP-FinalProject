@@ -1,11 +1,10 @@
+# Usage: Open terminal/cmd and run "python WebServer.py"
 import requests
 from bs4 import BeautifulSoup
-import pandas
+import pandas as pd
 import lxml.html
 import xlwt
 from xlwt import Workbook
-import pickle
-import json
 
 #imports for sending email with attachment
 import smtplib,ssl
@@ -14,8 +13,6 @@ from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.utils import formatdate
 from email import encoders
-
-# Usage: Open terminal/cmd and run "python WebServer.py"
 
 # Import socket module
 from socket import *
@@ -48,21 +45,19 @@ def handle_client(connectionSocket):
         minPrice = connectionSocket.recv(1024).decode()
         maxPrice = connectionSocket.recv(1024).decode()
         radius = connectionSocket.recv(1024).decode()
-        email = connectionSocket.recv(1024).decode()
         url =   "https://www.realtor.com/apartments/"
         url = url + city + "_" + state + "/price-" + minPrice + "-" + maxPrice + "/radius-" + radius
-        connectionSocket.send("Compiling spreadsheet now... (may take up to a minute)".encode())
+        connectionSocket.send("Compiling spreadsheet now... (will open in browser when done)".encode())
 
         wb = Workbook()
         sheet1 = wb.add_sheet('Sheet 1')
-        sheet1.write(0, 0, 'Number')
-        sheet1.write(0, 1, 'Title')
-        sheet1.write(0, 2, 'Address')
-        sheet1.write(0, 3, 'Price')
-        sheet1.write(0, 4, 'Beds')
-        sheet1.write(0, 5, 'Baths')
-        sheet1.write(0, 6, 'sqft')
-        sheet1.write(0, 7, 'Pets')
+        sheet1.write(0, 0, 'Title')
+        sheet1.write(0, 1, 'Address')
+        sheet1.write(0, 2, 'Price')
+        sheet1.write(0, 3, 'Beds')
+        sheet1.write(0, 4, 'Baths')
+        sheet1.write(0, 5, 'sqft')
+        sheet1.write(0, 6, 'Pets')
         counter = 0
         t = 0
 
@@ -89,52 +84,30 @@ def handle_client(connectionSocket):
                     pets = apartmentData[i].find('li', {"data-label": "property-meta-pets"}).get_text()
                     sqft = apartmentData[i].find('li', {"data-label": "property-meta-sqft"}).get_text()
                 except:
-                    print("Property Card not properly formated")
+                    continue
 
-                sheet1.write(i + 1 + (44 * counter), 0, i)
-                sheet1.write(i + 1 + (44 * counter), 1, title)
-                sheet1.write(i + 1 + (44 * counter), 2, address)
-                sheet1.write(i + 1 + (44 * counter), 3, price)
-                sheet1.write(i + 1 + (44 * counter), 4, beds)
-                sheet1.write(i + 1 + (44 * counter), 5, baths)
-                sheet1.write(i + 1 + (44 * counter), 6, sqft)
-                sheet1.write(i + 1 + (44 * counter), 7, pets)
+                sheet1.write(i + 1 + (44 * counter), 0, title)
+                sheet1.write(i + 1 + (44 * counter), 1, address)
+                sheet1.write(i + 1 + (44 * counter), 2, price)
+                sheet1.write(i + 1 + (44 * counter), 3, beds)
+                sheet1.write(i + 1 + (44 * counter), 4, baths)
+                sheet1.write(i + 1 + (44 * counter), 5, sqft)
+                sheet1.write(i + 1 + (44 * counter), 6, pets)
             counter = counter + 1
+        excel_file = "ApartmentSearch_" + city + "_" + state + "_" + minPrice + "_" + maxPrice + "_" + radius +".xls"
+        wb.save(excel_file)
+        wb1 = pd.read_excel(excel_file)
+        html_file = "server_" + city + "_"+ state + "_" + minPrice + "_" + maxPrice + "_" + radius + ".html"
+        f =  open(html_file, 'w')
+        f.write(wb1.to_html())
+        x = open(html_file, 'rb')
+        data = x.read()
+        connectionSocket.send(data)
 
-        file = 'NP.xls'
-        wb.save(file)
 
-        #sends email to client
-        username = 'witwebscraper'
-        password = 'Password123.'
-        send_from = 'witwebscraper@gmail.com'
-        Cc = ''
-        msg = MIMEMultipart()
-        msg['From'] = send_from
-        msg['To'] = email
-        msg['Cc'] = Cc
-        msg['Date'] = formatdate(localtime=True)
-        msg['Subject'] = 'Your apartment search'
-        server = smtplib.SMTP('smtp.gmail.com')
-        port = '587'
-        fp = open(file, 'rb')
-        part = MIMEBase('application', 'vnd.ms-excel')
-        part.set_payload(fp.read())
-        fp.close()
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition', 'attachment', filename='Apartment Search')
-        msg.attach(part)
-        smtp = smtplib.SMTP('smtp.gmail.com')
-        smtp.ehlo()
-        smtp.starttls()
-        smtp.login(username, password)
-        smtp.sendmail(send_from, email.split(',') + msg['Cc'].split(','), msg.as_string())
-        smtp.quit()
 
         # Close the client connection socket
-        emailConfirmation = "Email with spreadsheet has been sent to " + email
-        connectionSocket.send(emailConfirmation.encode())
-        print("Email sent. Closing connection for search of: " + url)
+        print("Table computed. Closing connection for search of: " + url)
         connectionSocket.close()
 
     except IOError:
